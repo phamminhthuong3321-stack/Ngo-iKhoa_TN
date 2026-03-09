@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Mentor Pro v4.0 - TT GDTX Cà Mau</title>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- CodeMirror -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/dialog/dialog.css" rel="stylesheet">
+    <!-- Pyodide and SQL.js -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #06b6d4;
+            --accent: #10b981;
+            --doraverse: #8b5cf6;
+        }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .doraverse-gradient { background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%); }
+        .chat-bubble { border-radius: 20px 20px 20px 0; }
+        .user-bubble { border-radius: 20px 20px 0 20px; }
+        .doraverse-bubble {
+            border-radius: 20px 20px 20px 0;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-left: 4px solid #8b5cf6;
+        }
+        .typewriter h1 {
+            overflow: hidden;
+            border-right: .15em solid var(--accent);
+            white-space: nowrap;
+            margin: 0 auto;
+            animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
+        }
+        @keyframes typing { from { width: 0 } to { width: 100% } }
+        @keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: var(--accent); } }
+        .floating { animation: floating 3s ease-in-out infinite; }
+        @keyframes floating {
+            0% { transform: translate(0, 0px); }
+            50% { transform: translate(0, -15px); }
+            100% { transform: translate(0, 0px); }
+        }
+        .progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #4f46e5, #06b6d4);
+            width: 0%;
+            transition: width 1s ease;
+        }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+        .doraverse-pulse { animation: doraverse-pulse 2s infinite; }
+        @keyframes doraverse-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .exercise-question {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4f46e5;
+        }
+        .doraverse-message {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 20px;
+        }
+        .doraverse-avatar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+        .ai-response-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .action-btn {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .copy-btn { background: #f3f4f6; color: #4b5563; }
+        .copy-btn:hover { background: #e5e7eb; }
+        .feedback-btn { background: #f0f9ff; color: #0369a1; }
+        .feedback-btn:hover { background: #e0f2fe; }
+        .learning-mode-card {
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        .learning-mode-card.active {
+            border-color: #8b5cf6;
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.1);
+        }
+        .fixed-notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            width: 300px;
+        }
+        .prose { max-width: none; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* CodeMirror customizations */
+        .CodeMirror {
+            height: 300px;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+        }
+        .editor-toolbar {
+            background: #2d2d2d;
+            color: white;
+            padding: 5px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .editor-toolbar button {
+            background: #3c3c3c;
+            border: none;
+            color: #ccc;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .editor-toolbar button:hover {
+            background: #4f4f4f;
+            color: white;
+        }
+        .editor-toolbar button.active {
+            background: #007acc;
+            color: white;
+        }
+        .output-frame {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 150px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Progress Indicator -->
+    <div class="progress-bar fixed top-0 left-0 z-50" id="pageProgress"></div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="fixed-notification-container"></div>
+
+    <!-- Header -->
+    <header class="doraverse-gradient text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                    <div class="bg-white p-3 rounded-full doraverse-pulse">
+                        <i class="fas fa-robot text-3xl text-purple-600"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold">AI Mentor Pro v4.0</h1>
+                        <p class="text-purple-100">Trung tâm GDTX Cà Mau - Tích hợp SGK 10/11</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="ai-toggle-label bg-white px-4 py-2 rounded-lg">
+                        <span class="text-purple-600 font-bold">Doraverse AI v4.0</span>
+                    </div>
+                    <div id="userStatus" class="text-center hidden">
+                        <p class="text-lg"><i class="fas fa-user-graduate mr-2"></i>Chào, <span id="currentUserName">Người dùng</span></p>
+                        <p class="text-purple-100">Điểm XP: <span id="currentUserXP">0</span></p>
+                    </div>
+                    <button id="authBtn" onclick="openAuthModal()" class="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-50 transition flex items-center">
+                        <i class="fas fa-user mr-2"></i> Đăng Nhập
+                    </button>
+                    <button id="userMenuBtn" onclick="toggleUserMenu()" class="hidden bg-white text-purple-600 p-2 rounded-full hover:bg-purple-50 transition">
+                        <i class="fas fa-user text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <nav class="flex flex-wrap items-center justify-center gap-2 md:gap-4 mt-4 border-t border-white/20 pt-4">
+                <button onclick="scrollToSection('hero')" class="text-sm md:text-base text-white hover:text-purple-200 px-2 py-1 rounded transition">Trang chủ</button>
+                <button onclick="scrollToSection('chat-section')" class="text-sm md:text-base text-white hover:text-purple-200 px-2 py-1 rounded transition">AI Chat</button>
+                <button onclick="scrollToSection('editor-section')" class="text-sm md:text-base text-white hover:text-purple-200 px-2 py-1 rounded transition">Code Editor</button>
+                <button onclick="scrollToSection('exercise-section')" class="text-sm md:text-base text-white hover:text-purple-200 px-2 py-1 rounded transition">Bài tập</button>
+                <button onclick="showAndScroll('doraverseProjects')" class="text-sm md:text-base text-white hover:text-purple-200 px-2 py-1 rounded transition">Dự án</button>
+                <button onclick="showAndScroll('knowledgeBase')" class="text-sm md:text-base text-white hover:text-purple-200 px-2 py-1 rounded transition">Kiến thức</button>
+                <button onclick="showAndScroll('userDashboard')" class="text-sm md:text-base text-white hover:text-purple-200 px-2 py-1 rounded transition">Bảng điều khiển</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- User Menu -->
+    <div id="userMenu" class="hidden absolute right-4 top-20 bg-white shadow-xl rounded-lg p-4 w-64 z-50 glass-effect">
+        <div class="flex items-center mb-4">
+            <div class="bg-purple-100 p-3 rounded-full mr-3">
+                <i class="fas fa-user-tie text-purple-600"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-800" id="menuUserName">Học Sinh GDTX</h4>
+                <p class="text-sm text-gray-600" id="menuUserEmail">Đang học tập</p>
+            </div>
+        </div>
+        <div class="border-t pt-3">
+            <button onclick="showUserDashboard()" class="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center">
+                <i class="fas fa-tachometer-alt text-purple-500 mr-3"></i><span>Bảng điều khiển</span>
+            </button>
+            <button onclick="showUserProgress()" class="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center">
+                <i class="fas fa-chart-line text-green-500 mr-3"></i><span>Tiến độ học tập</span>
+            </button>
+            <button onclick="showSavedWork()" class="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center">
+                <i class="fas fa-save text-blue-500 mr-3"></i><span>Bài làm đã lưu</span>
+            </button>
+            <button onclick="showKnowledgeBase()" class="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center">
+                <i class="fas fa-book text-purple-500 mr-3"></i><span>Thư viện kiến thức</span>
+            </button>
+            <button onclick="showDoraverseProjects()" class="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center">
+                <i class="fas fa-rocket text-purple-500 mr-3"></i><span>Dự án Doraverse</span>
+            </button>
+            <button onclick="toggleDarkMode()" class="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center">
+                <i class="fas fa-moon text-yellow-500 mr-3"></i><span id="darkModeText">Chế độ tối</span>
+            </button>
+            <button onclick="handleLogout()" class="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center text-red-600">
+                <i class="fas fa-sign-out-alt mr-3"></i><span>Đăng xuất</span>
+            </button>
+        </div>
+    </div>
+
+    <main class="container mx-auto px-4 py-8">
+
+        <!-- Hero Section -->
+        <section id="hero" class="mb-12 text-center">
+            <div class="typewriter mb-6">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-800">HỌC TIN HỌC 10 & 11 CHI TIẾT</h1>
+            </div>
+            <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                Phiên bản 4.0 với AI Doraverse thông minh, tích hợp đầy đủ nội dung sách giáo khoa,
+                tra cứu theo từng mục, tạo bài tập trắc nghiệm, làm bài và chia sẻ.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 mb-6">
+                <span class="px-4 py-2 bg-purple-100 text-purple-700 rounded-full"><i class="fas fa-robot mr-2"></i>Doraverse AI v4.0</span>
+                <span class="px-4 py-2 bg-blue-100 text-blue-700 rounded-full"><i class="fas fa-book-open mr-2"></i>SGK 10-11</span>
+                <span class="px-4 py-2 bg-green-100 text-green-700 rounded-full"><i class="fas fa-pencil-alt mr-2"></i>50+ câu hỏi</span>
+                <span class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-full"><i class="fas fa-share-alt mr-2"></i>Chia sẻ</span>
+            </div>
+            <div class="floating inline-block">
+                <i class="fas fa-arrow-down text-4xl text-purple-500"></i>
+            </div>
+        </section>
+
+        <!-- Quick Stats -->
+        <div id="stats-section" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500">
+                <div class="flex items-center">
+                    <div class="bg-purple-100 p-3 rounded-full mr-4"><i class="fas fa-code text-purple-600"></i></div>
+                    <div><h4 class="font-bold text-gray-800">Bài tập đã làm</h4><p class="text-2xl font-bold" id="exercisesCount">0</p></div>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500">
+                <div class="flex items-center">
+                    <div class="bg-green-100 p-3 rounded-full mr-4"><i class="fas fa-check-circle text-green-600"></i></div>
+                    <div><h4 class="font-bold text-gray-800">Câu hỏi đã hỏi</h4><p class="text-2xl font-bold" id="questionsCount">0</p></div>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
+                <div class="flex items-center">
+                    <div class="bg-blue-100 p-3 rounded-full mr-4"><i class="fas fa-robot text-blue-600"></i></div>
+                    <div><h4 class="font-bold text-gray-800">Doraverse tương tác</h4><p class="text-2xl font-bold" id="doraverseCount">0</p></div>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-500">
+                <div class="flex items-center">
+                    <div class="bg-yellow-100 p-3 rounded-full mr-4"><i class="fas fa-star text-yellow-600"></i></div>
+                    <div><h4 class="font-bold text-gray-800">Điểm kinh nghiệm</h4><p class="text-2xl font-bold" id="xpPoints">0</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Chat + Code Editor -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            <!-- Chat -->
+            <div id="chat-section" class="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                        <i class="fas fa-robot mr-3 text-purple-500"></i>
+                        <span>Doraverse AI 4.0</span>
+                        <span class="doraverse-badge ml-3"><i class="fas fa-book mr-1"></i>SGK 10-11</span>
+                    </h2>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded-full"><i class="fas fa-bolt mr-1"></i> GPT-4 Turbo</span>
+                        <button onclick="clearChat()" class="text-sm text-gray-500 hover:text-gray-700 flex items-center"><i class="fas fa-trash-alt mr-1"></i> Xóa</button>
+                    </div>
+                </div>
+                
+                <!-- Learning Mode Selection -->
+                <div class="mb-6">
+                    <h3 class="font-bold text-gray-700 mb-3">Chế độ học tập:</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <button onclick="setLearningMode('tutorial')" id="modeTutorial" class="learning-mode-card p-3 bg-purple-50 rounded-lg text-center active">
+                            <i class="fas fa-graduation-cap text-purple-600 text-xl mb-2"></i><p class="text-sm font-medium">Hướng dẫn</p>
+                        </button>
+                        <button onclick="setLearningMode('code_review')" id="modeCodeReview" class="learning-mode-card p-3 bg-green-50 rounded-lg text-center">
+                            <i class="fas fa-search text-green-600 text-xl mb-2"></i><p class="text-sm font-medium">Review Code</p>
+                        </button>
+                        <button onclick="setLearningMode('debugging')" id="modeDebugging" class="learning-mode-card p-3 bg-red-50 rounded-lg text-center">
+                            <i class="fas fa-bug text-red-600 text-xl mb-2"></i><p class="text-sm font-medium">Debug</p>
+                        </button>
+                        <button onclick="setLearningMode('project')" id="modeProject" class="learning-mode-card p-3 bg-blue-50 rounded-lg text-center">
+                            <i class="fas fa-project-diagram text-blue-600 text-xl mb-2"></i><p class="text-sm font-medium">Dự án</p>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Chat Messages Container -->
+                <div id="aiChat" class="mb-4 p-4 bg-gray-50 rounded-lg h-96 overflow-y-auto">
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-robot text-4xl mb-4 text-purple-500"></i>
+                        <p class="text-lg">Xin chào! Tôi là Doraverse AI v4.0</p>
+                        <p class="text-sm mt-2">Tôi có thể trả lời chi tiết từ sách giáo khoa Tin 10 và 11</p>
+                        <div class="mt-4">
+                            <button onclick="quickQuestion('nguyên tắc phòng chống lừa đảo')" class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full m-1">🛡️ Nguyên tắc phòng chống lừa đảo</button>
+                            <button onclick="quickQuestion('thiết bị vào ra thông dụng')" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full m-1">🖥️ Thiết bị vào ra</button>
+                            <button onclick="quickQuestion('bài 10 lớp 10')" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full m-1">📘 Bài 10 lớp 10</button>
+                            <button onclick="quickQuestion('bài 3 lớp 11 phần mềm nguồn mở')" class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full m-1">📗 Bài 3 lớp 11</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Input Area -->
+                <div class="mb-4">
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button id="btnBasic" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition" onclick="setQuestionType('basic')">Kiến thức</button>
+                        <button id="btnCode" class="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition" onclick="setQuestionType('code')">Lập trình</button>
+                        <button id="btnDebug" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition" onclick="setQuestionType('debug')">Sửa lỗi</button>
+                        <button id="btnConcept" class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition" onclick="setQuestionType('concept')">Khái niệm</button>
+                        <button id="btnProject" class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition" onclick="setQuestionType('project')">Dự án</button>
+                    </div>
+                    <div class="relative">
+                        <textarea id="questionInput" class="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent question-textarea" placeholder="Nhập câu hỏi của bạn... (có thể nhấn Enter để gửi)" maxlength="2000"></textarea>
+                        <div class="absolute bottom-2 right-2 text-xs text-gray-500"><span id="charCount">0</span>/2000</div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button onclick="askAI()" class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-blue-600 text-white font-bold rounded-lg hover:opacity-90 transition flex items-center justify-center">
+                        <i class="fas fa-paper-plane mr-2"></i> Gửi câu hỏi
+                    </button>
+                    <button onclick="uploadFileForAI()" class="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"><i class="fas fa-upload"></i></button>
+                    <button onclick="voiceInput()" class="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"><i class="fas fa-microphone"></i></button>
+                    <button onclick="analyzeCodeWithDoraverse()" class="px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"><i class="fas fa-magic"></i></button>
+                </div>
+            </div>
+            
+            <!-- Code Editor Sidebar (nâng cấp) -->
+            <div id="editor-section" class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                        <i class="fas fa-laptop-code mr-3 text-green-500"></i>Trình Soạn Thảo
+                    </h2>
+                    <div class="flex space-x-2">
+                        <button onclick="saveCurrentCode()" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"><i class="fas fa-save mr-1"></i> Lưu</button>
+                        <button onclick="loadExample()" class="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"><i class="fas fa-download mr-1"></i> Ví dụ</button>
+                        <button onclick="doraverseCodeOptimize()" class="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"><i class="fas fa-wand-magic-sparkles mr-1"></i> Tối ưu</button>
+                    </div>
+                </div>
+                
+                <!-- Editor Toolbar -->
+                <div class="editor-toolbar mb-2">
+                    <button class="lang-btn active" onclick="setLanguage('html')">HTML</button>
+                    <button class="lang-btn" onclick="setLanguage('css')">CSS</button>
+                    <button class="lang-btn" onclick="setLanguage('js')">JavaScript</button>
+                    <button class="lang-btn" onclick="setLanguage('python')">Python</button>
+                    <button class="lang-btn" onclick="setLanguage('sql')">SQL</button>
+                    <button onclick="formatCode()" title="Định dạng code"><i class="fas fa-indent"></i> Format</button>
+                    <button onclick="undo()" title="Hoàn tác"><i class="fas fa-undo"></i></button>
+                    <button onclick="redo()" title="Làm lại"><i class="fas fa-redo"></i></button>
+                </div>
+                
+                <div class="mb-4">
+                    <div id="codeEditorContainer" class="border border-gray-300 rounded-lg overflow-hidden">
+                        <textarea id="codeEditor" class="code-editor w-full h-64 p-4 bg-gray-900 text-white font-mono" placeholder="// Viết code của bạn ở đây..."></textarea>
+                    </div>
+                    
+                    <!-- Conversion UI -->
+                    <div class="flex items-center space-x-2 mt-2">
+                        <select id="targetLanguageSelect" class="px-2 py-1 border rounded text-sm bg-white">
+                            <option value="python">Python</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="sql">SQL</option>
+                            <option value="html">HTML</option>
+                            <option value="css">CSS</option>
+                        </select>
+                        <button onclick="convertCode()" class="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"><i class="fas fa-exchange-alt mr-1"></i> Chuyển đổi</button>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <button onclick="runCode()" class="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center"><i class="fas fa-play mr-2"></i> Chạy Code</button>
+                    <button onclick="askAIAboutCode()" class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center justify-center"><i class="fas fa-robot mr-2"></i> Hỏi AI về code này</button>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold text-gray-700">Kết quả:</h3>
+                        <button onclick="clearOutput()" class="text-sm text-gray-500 hover:text-gray-700"><i class="fas fa-times mr-1"></i> Xóa</button>
+                    </div>
+                    <div class="output-frame">
+                        <iframe id="codeOutput" class="w-full h-48 border-none"></iframe>
+                    </div>
+                    <div id="outputStats" class="mt-2 text-sm text-gray-600 hidden">
+                        <p>Thời gian chạy: <span id="executionTime">0</span>ms</p>
+                        <p>Bộ nhớ sử dụng: <span id="memoryUsage">0</span>KB</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exercise Generator (mở rộng 50+ câu) -->
+        <div id="exercise-section" class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center"><i class="fas fa-tasks mr-3 text-purple-500"></i>Bài Tập Trắc Nghiệm (50+ câu)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="font-bold text-lg mb-3">Tạo bài tập trắc nghiệm</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 mb-1">Chọn chủ đề:</label>
+                            <select id="subjectSelect" class="w-full p-2 border border-gray-300 rounded">
+                                <option value="all">📚 Tất cả (lớp 10 & 11)</option>
+                                <optgroup label="Lớp 10">
+                                    <option value="bài 1 lớp 10">Bài 1: Thông tin và xử lí thông tin</option>
+                                    <option value="bài 2 lớp 10">Bài 2: Vai trò của thiết bị thông minh</option>
+                                    <option value="bài 3 lớp 10">Bài 3: Một số kiểu dữ liệu</option>
+                                    <option value="bài 4 lớp 10">Bài 4: Hệ nhị phân</option>
+                                    <option value="bài 5 lớp 10">Bài 5: Dữ liệu lôgic</option>
+                                    <option value="bài 6 lớp 10">Bài 6: Dữ liệu âm thanh và hình ảnh</option>
+                                    <option value="bài 9 lớp 10">Bài 9: An toàn trên không gian mạng</option>
+                                </optgroup>
+                                <optgroup label="Lớp 11">
+                                    <option value="bài 1 lớp 11">Bài 1: Hệ điều hành</option>
+                                    <option value="bài 3 lớp 11">Bài 3: Phần mềm nguồn mở</option>
+                                    <option value="bài 5 lớp 11">Bài 5: Kết nối máy tính với thiết bị số</option>
+                                    <option value="bài 9 lớp 11">Bài 9: Giao tiếp an toàn trên Internet</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-1">Số lượng câu hỏi (tối đa 20):</label>
+                            <input type="number" id="questionCount" min="1" max="20" value="5" class="w-full p-2 border border-gray-300 rounded">
+                        </div>
+                        <button onclick="generateExercise()" class="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold rounded-lg hover:opacity-90 transition">
+                            <i class="fas fa-magic mr-2"></i> Tạo bài tập (ngẫu nhiên)
+                        </button>
+                    </div>
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                        <h4 class="font-bold mb-2">📋 Bài tập đã lưu</h4>
+                        <div id="savedExercisesList" class="max-h-40 overflow-y-auto text-sm">
+                            <p class="text-gray-500">Chưa có bài tập nào được lưu.</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-3">Bài tập hiện tại</h3>
+                    <div id="exerciseOutput" class="p-4 border rounded-lg h-80 overflow-y-auto bg-gray-50">
+                        <p class="text-gray-500 text-center py-8"><i class="fas fa-lightbulb text-3xl mb-3 text-yellow-500"></i><br>Bài tập sẽ xuất hiện ở đây...</p>
+                    </div>
+                    <div class="mt-4 flex space-x-2">
+                        <button onclick="saveExercise()" class="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><i class="fas fa-save mr-1"></i> Lưu bài tập</button>
+                        <button onclick="checkExercise()" class="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"><i class="fas fa-check mr-1"></i> Kiểm tra</button>
+                        <button onclick="shareExercise()" class="flex-1 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"><i class="fas fa-share mr-1"></i> Chia sẻ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Dashboard -->
+        <div id="userDashboard" class="hidden bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center"><i class="fas fa-tachometer-alt mr-3 text-purple-500"></i>Bảng Điều Khiển Học Tập</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="col-span-2">
+                    <h3 class="font-bold text-lg mb-4">Tiến độ học tập</h3>
+                    <div class="space-y-4">
+                        <div><div class="flex justify-between mb-1"><span class="text-gray-700">Lớp 10</span><span class="text-gray-700" id="progress10">0%</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-purple-600 h-2 rounded-full" id="progressBar10" style="width: 0%"></div></div></div>
+                        <div><div class="flex justify-between mb-1"><span class="text-gray-700">Lớp 11</span><span class="text-gray-700" id="progress11">0%</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-green-600 h-2 rounded-full" id="progressBar11" style="width: 0%"></div></div></div>
+                        <div><div class="flex justify-between mb-1"><span class="text-gray-700">Lập trình</span><span class="text-gray-700" id="progressCode">0%</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-blue-600 h-2 rounded-full" id="progressBarCode" style="width: 0%"></div></div></div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">Hoạt động gần đây</h3>
+                    <div class="space-y-3" id="recentActivity"><div class="text-gray-500 text-center py-4"><p>Chưa có hoạt động nào</p></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Doraverse Projects -->
+        <div id="doraverseProjects" class="hidden bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center"><i class="fas fa-rocket mr-3 text-purple-500"></i>Dự Án Doraverse</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="project-card p-5 border rounded-xl"><div class="bg-purple-100 p-4 rounded-lg mb-4"><i class="fas fa-robot text-3xl text-purple-600"></i></div><h4 class="font-bold text-lg mb-2">AI Chatbot</h4><p class="text-gray-600 text-sm mb-4">Xây dựng chatbot AI đơn giản bằng Python</p><button onclick="startProject('ai_chatbot')" class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Bắt đầu</button></div>
+                <div class="project-card p-5 border rounded-xl"><div class="bg-blue-100 p-4 rounded-lg mb-4"><i class="fas fa-gamepad text-3xl text-blue-600"></i></div><h4 class="font-bold text-lg mb-2">Game JavaScript</h4><p class="text-gray-600 text-sm mb-4">Tạo game đơn giản với HTML5 Canvas</p><button onclick="startProject('js_game')" class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Bắt đầu</button></div>
+                <div class="project-card p-5 border rounded-xl"><div class="bg-green-100 p-4 rounded-lg mb-4"><i class="fas fa-chart-line text-3xl text-green-600"></i></div><h4 class="font-bold text-lg mb-2">Data Visualization</h4><p class="text-gray-600 text-sm mb-4">Trực quan hóa dữ liệu với Chart.js</p><button onclick="startProject('data_viz')" class="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Bắt đầu</button></div>
+            </div>
+        </div>
+
+        <!-- Knowledge Base Section -->
+        <div id="knowledgeBase" class="hidden bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center"><i class="fas fa-book mr-3 text-purple-500"></i>Thư Viện Kiến Thức</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="p-4 border rounded-lg"><h4 class="font-bold text-purple-600 mb-2">HTML/CSS</h4><ul class="space-y-2"><li><a href="https://developer.mozilla.org/vi/docs/Web/HTML" target="_blank" class="text-gray-600 hover:text-purple-600">MDN HTML Docs</a></li><li><a href="https://www.w3schools.com/html/" target="_blank" class="text-gray-600 hover:text-purple-600">W3Schools HTML</a></li></ul></div>
+                <div class="p-4 border rounded-lg"><h4 class="font-bold text-green-600 mb-2">JavaScript</h4><ul class="space-y-2"><li><a href="https://developer.mozilla.org/vi/docs/Web/JavaScript" target="_blank" class="text-gray-600 hover:text-green-600">MDN JavaScript</a></li><li><a href="https://javascript.info/" target="_blank" class="text-gray-600 hover:text-green-600">JavaScript.info</a></li></ul></div>
+                <div class="p-4 border rounded-lg"><h4 class="font-bold text-yellow-600 mb-2">Python</h4><ul class="space-y-2"><li><a href="https://docs.python.org/3/" target="_blank" class="text-gray-600 hover:text-yellow-600">Python Docs</a></li><li><a href="https://www.learnpython.org/" target="_blank" class="text-gray-600 hover:text-yellow-600">Learn Python</a></li></ul></div>
+                <div class="p-4 border rounded-lg"><h4 class="font-bold text-blue-600 mb-2">AI & Doraverse</h4><ul class="space-y-2"><li><a href="https://www.deeplearning.ai/" target="_blank" class="text-gray-600 hover:text-blue-600">DeepLearning.AI</a></li><li><a href="https://www.kaggle.com/learn" target="_blank" class="text-gray-600 hover:text-blue-600">Kaggle Learn</a></li></ul></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-12 py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0"><h3 class="text-xl font-bold mb-2">AI Coding Mentor Pro v4.0</h3><p>Trung tâm GDTX Tỉnh Cà Mau</p><p class="text-gray-400">Tích hợp sách giáo khoa Tin học 10 & 11</p></div>
+                <div class="text-center"><p class="mb-2">Phiên bản 4.0 - Tháng 3/2026</p><div class="flex space-x-4 justify-center"><a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-facebook text-xl"></i></a><a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-youtube text-xl"></i></a><a href="https://github.com" target="_blank" class="text-gray-300 hover:text-white"><i class="fab fa-github text-xl"></i></a></div></div>
+            </div>
+            <div class="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400"><p>© 2026 Trung tâm GDTX Cà Mau. Nguồn tham khảo: Bộ GD&ĐT, SGK Kết nối tri thức.</p></div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/sql/sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/javascript-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/css-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/html-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closetag.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/selection/active-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/dialog/dialog.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/search/searchcursor.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/search/search.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/comment/comment.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/foldcode.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/foldgutter.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/brace-fold.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/comment-fold.js"></script>
+
+    <script>
+        // ==================== CẤU HÌNH & BIẾN TOÀN CỤC ====================
+        const CONFIG = {
+            APP_VERSION: '4.0',
+            DEFAULT_USER: { 
+                username: 'guest', 
+                fullname: 'Khách', 
+                email: '', 
+                xp: 0, 
+                level: 1, 
+                stats: { exercisesCompleted: 0, questionsAsked: 0, codeRuns: 0, doraverseInteractions: 0 },
+                progress: { lop10: 0, lop11: 0, code: 0 },
+                recentActivity: []
+            }
+        };
+        let currentUser = null;
+        let isLoggedIn = false;
+        let currentLanguage = 'html';
+        let currentDifficulty = 'medium';
+        let questionType = 'basic';
+        let learningMode = 'tutorial';
+        let codeEditor = null;
+        let chatHistory = [];
+        let currentExercise = null;
+        let isDarkMode = false;
+        let doraverseInteractions = 0;
+
+        // Pyodide and SQL.js instances
+        let pyodide = null;
+        let SQL = null;
+
+        // ==================== DỮ LIỆU CHI TIẾT TỪ SÁCH GIÁO KHOA (ĐÃ CHÈN ĐẦY ĐỦ) ====================
+        const textbookDetails = {
+            "bài 1 lớp 10": {
+                title: "Bài 1: Thông tin và xử lí thông tin",
+                sections: [
+                    { 
+                        title: "1. Thông tin và dữ liệu",
+                        subsections: [
+                            { title: "a) Quá trình xử lí thông tin", content: "Quá trình xử lí thông tin của máy tính gồm các bước: Tiếp nhận dữ liệu, Xử lí dữ liệu, Đưa ra kết quả. Dữ liệu là thông tin đã được đưa vào máy tính.", page: 7 },
+                            { title: "b) Phân biệt dữ liệu và thông tin", content: "Thông tin là ý nghĩa của dữ liệu. Dữ liệu là các yếu tố thể hiện, xác định thông tin. Cùng một thông tin có thể được thể hiện bởi nhiều loại dữ liệu khác nhau. Ngược lại, một dữ liệu có thể mang nhiều thông tin khác nhau.", page: 8 }
+                        ]
+                    },
+                    {
+                        title: "2. Đơn vị lưu trữ dữ liệu",
+                        subsections: [
+                            { title: "Byte và các bội số", content: "Byte là đơn vị dữ liệu nhỏ nhất mà máy tính truy cập được (8 bit). Các đơn vị đo: 1 KB = 2^10 B, 1 MB = 2^10 KB, 1 GB = 2^10 MB, 1 TB = 2^10 GB.", page: 9 }
+                        ]
+                    },
+                    {
+                        title: "3. Lưu trữ, xử lí và truyền thông bằng thiết bị số",
+                        subsections: [
+                            { title: "Ưu điểm của thiết bị số", content: "Thiết bị số có các ưu điểm: xử lí thông tin rất nhanh với độ chính xác cao; lưu trữ dữ liệu với dung lượng lớn, giá thành rẻ; truyền tin với tốc độ rất lớn; giúp thực hiện tự động nhiều công việc.", page: 10 }
+                        ]
+                    }
+                ]
+            },
+            "bài 2 lớp 10": {
+                title: "Bài 2: Vai trò của thiết bị thông minh và tin học",
+                sections: [
+                    {
+                        title: "1. Thiết bị thông minh",
+                        subsections: [
+                            { title: "a) Thiết bị thông minh là một hệ thống xử lí thông tin", content: "Thiết bị thông minh là các thiết bị điện tử có thể hoạt động tự chủ, có khả năng kết nối với thiết bị khác qua mạng không dây. Ví dụ: điện thoại thông minh, máy tính bảng, camera kết nối Internet.", page: 12 },
+                            { title: "b) Vai trò của thiết bị thông minh trong cách mạng công nghiệp 4.0", content: "Thiết bị thông minh là nền tảng của IoT, giúp thu thập dữ liệu tự động, kết nối vạn vật, tạo ra các hệ thống sản xuất thông minh.", page: 13 }
+                        ]
+                    },
+                    {
+                        title: "2. Các thành tựu của tin học",
+                        subsections: [
+                            { title: "a) Đóng góp của tin học với xã hội", content: "Tin học giúp giải quyết các bài toán khoa học kĩ thuật, thay đổi cách thức làm việc, giao tiếp cộng đồng.", page: 14 },
+                            { title: "b) Một số thành tựu phát triển của Tin học", content: "Hệ điều hành, mạng Internet, các ngôn ngữ lập trình bậc cao, hệ quản trị cơ sở dữ liệu.", page: 15 }
+                        ]
+                    }
+                ]
+            },
+            "bài 3 lớp 10": {
+                title: "Bài 3: Một số kiểu dữ liệu và dữ liệu văn bản",
+                sections: [
+                    {
+                        title: "1. Phân loại và biểu diễn thông tin trong máy tính",
+                        subsections: [
+                            { title: "Sơ đồ phân loại", content: "Các kiểu dữ liệu: số, văn bản, hình ảnh, âm thanh, lôgic.", page: 17 }
+                        ]
+                    },
+                    {
+                        title: "2. Biểu diễn dữ liệu văn bản",
+                        subsections: [
+                            { title: "a) Bảng mã ASCII", content: "Bảng mã ASCII dùng 7 bit (128 kí tự) và mở rộng 8 bit (256 kí tự).", page: 18 },
+                            { title: "b) Bảng mã Unicode và tiếng Việt trong Unicode", content: "Unicode là bảng mã hợp nhất quốc tế, dùng nhiều byte. UTF-8 là định dạng phổ biến.", page: 19 }
+                        ]
+                    }
+                ]
+            },
+            "bài 4 lớp 10": {
+                title: "Bài 4: Hệ nhị phân và dữ liệu số nguyên",
+                sections: [
+                    {
+                        title: "1. Hệ nhị phân và biểu diễn số nguyên",
+                        subsections: [
+                            { title: "a) Hệ nhị phân", content: "Hệ nhị phân dùng hai chữ số 0 và 1. Mỗi số có thể biểu diễn bằng dãy bit. Ví dụ: 19 = 10011.", page: 21 },
+                            { title: "b) Đổi biểu diễn số nguyên dương từ thập phân sang nhị phân", content: "Chia liên tiếp cho 2, lấy số dư từ dưới lên.", page: 22 }
+                        ]
+                    },
+                    {
+                        title: "2. Các phép tính số học trong hệ nhị phân",
+                        subsections: [
+                            { title: "a) Bảng cộng và nhân", content: "Bảng cộng: 0+0=0, 0+1=1, 1+0=1, 1+1=10 (nhớ 1). Bảng nhân: 0×0=0, 0×1=0, 1×0=0, 1×1=1.", page: 23 },
+                            { title: "b) Cộng hai số nhị phân", content: "Thực hiện từ phải sang trái, có nhớ.", page: 23 }
+                        ]
+                    }
+                ]
+            },
+            "bài 5 lớp 10": {
+                title: "Bài 5: Dữ liệu lôgic",
+                sections: [
+                    {
+                        title: "1. Các giá trị chân lí và các phép toán lôgic",
+                        subsections: [
+                            { title: "a) Lôgic mệnh đề", content: "Mệnh đề là khẳng định đúng hoặc sai. Giá trị lôgic: Đúng (1), Sai (0).", page: 25 },
+                            { title: "b) Các phép toán lôgic cơ bản", content: "AND, OR, NOT, XOR. Bảng chân trị.", page: 26 }
+                        ]
+                    },
+                    {
+                        title: "2. Biểu diễn dữ liệu lôgic",
+                        subsections: [
+                            { title: "Biểu diễn bằng bit", content: "1 bit: 1 là Đúng, 0 là Sai. Trong Python, 0 là False, khác 0 là True.", page: 27 }
+                        ]
+                    }
+                ]
+            },
+            "bài 6 lớp 10": {
+                title: "Bài 6: Dữ liệu âm thanh và hình ảnh",
+                sections: [
+                    {
+                        title: "1. Biểu diễn âm thanh",
+                        subsections: [
+                            { title: "a) Số hoá âm thanh", content: "Phương pháp PCM: lấy mẫu, lượng tử, mã hoá. Chu kì lấy mẫu nhỏ cho chất lượng cao.", page: 29 },
+                            { title: "b) Các định dạng lưu trữ âm thanh", content: "WAV (PCM), MP3 (nén mất mát).", page: 30 }
+                        ]
+                    },
+                    {
+                        title: "2. Biểu diễn hình ảnh",
+                        subsections: [
+                            { title: "Hệ màu RGB", content: "Mỗi điểm ảnh (pixel) có 3 màu: đỏ, lục, lam. Độ sâu màu 24 bit (8 bit/màu) cho 16,7 triệu màu.", page: 31 },
+                            { title: "Ảnh xám", content: "8 bit cho 256 mức xám.", page: 31 },
+                            { title: "Định dạng ảnh", content: "BMP (không nén), JPEG (nén mất mát), PNG (nén không mất mát).", page: 32 }
+                        ]
+                    }
+                ]
+            },
+            "bài 9 lớp 10": {
+                title: "Bài 9: An toàn trên không gian mạng",
+                sections: [
+                    {
+                        title: "1. Một số nguy cơ trên mạng",
+                        subsections: [
+                            { title: "Tin giả và tin phản văn hoá", content: "Ai cũng có thể đưa tin lên mạng, có nhiều tin giả, tin phản cảm, bạo lực.", page: 45 },
+                            { title: "Lừa đảo trên mạng", content: "Kẻ xấu lấy thông tin cá nhân để lừa đảo, mạo danh vay mượn.", page: 45 },
+                            { title: "Lộ thông tin cá nhân", content: "Thông tin cá nhân gồm tên, số điện thoại, email, tài khoản ngân hàng. Khi lộ có thể bị mạo danh, mất tiền.", page: 45 },
+                            { title: "Bắt nạt trên không gian mạng", content: "Xỉ và, lăng nhục, đe doạ, ảnh hưởng tâm lí nặng nề.", page: 46 },
+                            { title: "Nghiện mạng", content: "Dành quá nhiều thời gian cho mạng, ảnh hưởng sức khoẻ.", page: 46 },
+                            { title: "Biện pháp phòng chống", content: "Không kết bạn dễ dãi, không trả lời tin nhắn lạ, lưu bằng chứng, chia sẻ với bố mẹ/thầy cô, báo công an.", page: 46 }
+                        ]
+                    },
+                    {
+                        title: "2. Phần mềm độc hại",
+                        subsections: [
+                            { title: "a) Virus, trojan, worm", content: "Virus là đoạn mã độc lây nhiễm vào chương trình; Trojan là phần mềm nội gián; Worm là phần mềm độc hại tự nhân bản.", page: 47 },
+                            { title: "b) Tác hại của phần mềm độc hại", content: "Làm hỏng dữ liệu, ăn cắp thông tin, chiếm quyền điều khiển máy tính.", page: 47 },
+                            { title: "c) Phòng chống phần mềm độc hại", content: "Không tải phần mềm không rõ nguồn gốc, không mở liên kết lạ, sử dụng phần mềm diệt virus.", page: 48 }
+                        ]
+                    }
+                ]
+            },
+            "bài 1 lớp 11": {
+                title: "Bài 1: Hệ điều hành",
+                sections: [
+                    {
+                        title: "1. Lịch sử phát triển của hệ điều hành máy tính cá nhân",
+                        subsections: [
+                            { title: "Các nhóm chức năng của hệ điều hành", content: "Quản lí thiết bị, quản lí lưu trữ, tổ chức thực hiện chương trình, cung cấp giao diện, tiện ích.", page: 6 },
+                            { title: "Giao diện đồ hoạ và cơ chế plug & play", content: "Giao diện đồ hoạ giúp dễ sử dụng. Plug & play tự động nhận biết thiết bị ngoại vi.", page: 7 },
+                            { title: "Hệ điều hành Windows", content: "Các phiên bản: Windows 1.0 (1985), Windows 95, Windows XP, Windows 7, 10, 11.", page: 7 },
+                            { title: "Hệ điều hành Linux", content: "Linux là mã nguồn mở, dựa trên UNIX. Các bản phân phối: Ubuntu, RedHat.", page: 8 }
+                        ]
+                    },
+                    {
+                        title: "2. Hệ điều hành cho thiết bị di động",
+                        subsections: [
+                            { title: "Đặc điểm", content: "Giao diện thân thiện, kết nối mạng di động, nhiều tiện ích cá nhân.", page: 9 },
+                            { title: "iOS và Android", content: "iOS của Apple, Android của Google.", page: 9 }
+                        ]
+                    },
+                    {
+                        title: "3. Quan hệ giữa hệ điều hành, phần cứng và phần mềm ứng dụng",
+                        subsections: [
+                            { title: "Vai trò của hệ điều hành", content: "Hệ điều hành là môi trường trung gian giúp phần mềm ứng dụng khai thác phần cứng.", page: 10 }
+                        ]
+                    }
+                ]
+            },
+            "bài 3 lớp 11": {
+                title: "Bài 3: Phần mềm nguồn mở và phần mềm chạy trên Internet",
+                sections: [
+                    {
+                        title: "1. Phần mềm nguồn mở",
+                        subsections: [
+                            { title: "a) Phân loại phần mềm theo cách chuyển giao", content: "Phần mềm thương mại (bán, nguồn đóng), phần mềm tự do (miễn phí, có thể mã máy hoặc mã nguồn), phần mềm nguồn mở (cung cấp mã nguồn, được sửa đổi, phân phối lại).", page: 16 },
+                            { title: "b) Giấy phép đối với phần mềm nguồn mở", content: "Giấy phép GNU GPL là phổ biến nhất, cho phép sử dụng, sửa đổi, phân phối nhưng phải công bố mã nguồn và giữ nguyên giấy phép.", page: 17 }
+                        ]
+                    },
+                    {
+                        title: "2. Vai trò của phần mềm thương mại và phần mềm nguồn mở",
+                        subsections: [
+                            { title: "Phần mềm thương mại", content: "Có hai loại: phần mềm đặt hàng (theo yêu cầu) và phần mềm đóng gói (đáp ứng nhu cầu chung). Ưu điểm: hỗ trợ kĩ thuật, hoàn chỉnh cao.", page: 19 },
+                            { title: "Phần mềm nguồn mở", content: "Chi phí thấp, minh bạch, không phụ thuộc nhà cung cấp. Ví dụ: Linux, OpenOffice, GIMP.", page: 20 }
+                        ]
+                    },
+                    {
+                        title: "3. Phần mềm chạy trên Internet",
+                        subsections: [
+                            { title: "Khái niệm", content: "Phần mềm chạy trên Internet (phần mềm trực tuyến) cho phép sử dụng qua Internet mà không cần cài đặt. Ví dụ: Google Docs, Gmail.", page: 21 },
+                            { title: "Lợi ích", content: "Sử dụng mọi lúc mọi nơi, không cần cài đặt, lưu trữ trên đám mây, chi phí thấp.", page: 21 }
+                        ]
+                    }
+                ]
+            },
+            "bài 5 lớp 11": {
+                title: "Bài 5: Kết nối máy tính với các thiết bị số",
+                sections: [
+                    {
+                        title: "1. Một số thiết bị vào – ra thông dụng",
+                        subsections: [
+                            { title: "a) Một số thiết bị vào thông dụng", content: "Bàn phím, chuột (thông số: dpi, tốc độ, có thể tuỳ chỉnh).", page: 28 },
+                            { title: "b) Thiết bị ra", content: "Màn hình (kích thước, độ phân giải, tần số quét), máy in (độ phân giải, tốc độ, kết nối).", page: 29 }
+                        ]
+                    },
+                    {
+                        title: "2. Kết nối máy tính với thiết bị số",
+                        subsections: [
+                            { title: "a) Các cổng kết nối", content: "Cổng VGA, HDMI, USB, mạng. USB đa năng, HDMI truyền cả âm thanh và hình ảnh.", page: 31 },
+                            { title: "b) Kết nối qua bluetooth", content: "Cần ghép đôi (pairing) trước khi sử dụng. Ví dụ kết nối tai nghe, loa.", page: 32 }
+                        ]
+                    }
+                ]
+            },
+            "bài 9 lớp 11": {
+                title: "Bài 9: Giao tiếp an toàn trên Internet",
+                sections: [
+                    {
+                        title: "1. Nhận biết và phòng tránh một số dạng lừa đảo trên không gian số",
+                        subsections: [
+                            { title: "a) Một số nguyên tắc nhận biết và phòng tránh lừa đảo", content: "Ba nguyên tắc: HÃY CHẬM LẠI (không vội vàng), KIỂM TRA NGAY (xác minh thông tin), DỪNG LẠI, KHÔNG GỬI (không chuyển tiền).", page: 45 },
+                            { title: "b) Vận dụng vào một số tình huống cụ thể", content: "Lừa đảo thông báo tin tốt (trúng thưởng) hoặc tin xấu (vi phạm pháp luật) đều yêu cầu chuyển tiền. Cần cảnh giác.", page: 46 }
+                        ]
+                    },
+                    {
+                        title: "2. Văn hoá ứng xử trên không gian mạng",
+                        subsections: [
+                            { title: "Quy tắc ứng xử", content: "Tôn trọng, tuân thủ pháp luật; lành mạnh; an toàn, bảo mật thông tin; trách nhiệm.", page: 49 },
+                            { title: "Những điều nên và không nên làm", content: "Nên: tôn trọng, chia sẻ thông tin tích cực, bảo vệ thông tin cá nhân. Không nên: đăng tin giả, sử dụng ngôn từ phản cảm, xúc phạm người khác.", page: 50 }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // ==================== NGÂN HÀNG CÂU HỎI TRẮC NGHIỆM (50 câu) ====================
+        const sampleQuestions = [
+            // Lớp 10 - Bài 1 (5 câu)
+            { id: 1, type: 'multiple_choice', topic: 'bài 1 lớp 10', question: 'Theo bài học, thông tin là gì?', options: ['A. Những gì mang lại hiểu biết', 'B. Dữ liệu đã được mã hoá', 'C. Các dãy bit', 'D. Kết quả xử lí của máy tính'], correct: 0 },
+            { id: 2, type: 'multiple_choice', topic: 'bài 1 lớp 10', question: 'Đơn vị nào sau đây là đơn vị lưu trữ dữ liệu nhỏ nhất?', options: ['A. Byte', 'B. Bit', 'C. KB', 'D. MB'], correct: 1 },
+            { id: 3, type: 'multiple_choice', topic: 'bài 1 lớp 10', question: '1 KB bằng bao nhiêu byte?', options: ['A. 1000', 'B. 1024', 'C. 512', 'D. 2048'], correct: 1 },
+            { id: 4, type: 'multiple_choice', topic: 'bài 1 lớp 10', question: 'Quá trình xử lí thông tin của máy tính gồm mấy bước?', options: ['A. 2', 'B. 3', 'C. 4', 'D. 5'], correct: 1 },
+            { id: 5, type: 'multiple_choice', topic: 'bài 1 lớp 10', question: 'Thiết bị nào sau đây là thiết bị số?', options: ['A. Đồng hồ cơ', 'B. Đĩa hát', 'C. Thẻ nhớ', 'D. Điện thoại bàn'], correct: 2 },
+            // Lớp 10 - Bài 2 (5 câu)
+            { id: 6, type: 'multiple_choice', topic: 'bài 2 lớp 10', question: 'Thiết bị nào sau đây là thiết bị thông minh?', options: ['A. Điện thoại thông minh', 'B. Máy ảnh số', 'C. Đồng hồ cơ', 'D. Máy tính để bàn'], correct: 0 },
+            { id: 7, type: 'multiple_choice', topic: 'bài 2 lớp 10', question: 'Cuộc cách mạng công nghiệp lần thứ tư dựa trên nền tảng nào?', options: ['A. Công nghệ số', 'B. Điện cơ', 'C. Hơi nước', 'D. Năng lượng nguyên tử'], correct: 0 },
+            { id: 8, type: 'multiple_choice', topic: 'bài 2 lớp 10', question: 'IoT là viết tắt của?', options: ['A. Internet of Things', 'B. Internet of Thinking', 'C. Interconnection of Things', 'D. None'], correct: 0 },
+            { id: 9, type: 'multiple_choice', topic: 'bài 2 lớp 10', question: 'Vai trò của tin học đối với xã hội?', options: ['A. Giải quyết bài toán khoa học', 'B. Thay đổi cách làm việc', 'C. Giao tiếp cộng đồng', 'D. Tất cả đáp án'], correct: 3 },
+            { id: 10, type: 'multiple_choice', topic: 'bài 2 lớp 10', question: 'Hệ điều hành nào là hệ điều hành di động?', options: ['A. Windows', 'B. macOS', 'C. Android', 'D. Linux'], correct: 2 },
+            // Lớp 10 - Bài 3 (5 câu)
+            { id: 11, type: 'multiple_choice', topic: 'bài 3 lớp 10', question: 'Bảng mã ASCII dùng bao nhiêu bit để mã hóa?', options: ['A. 7 bit', 'B. 8 bit', 'C. 16 bit', 'D. 32 bit'], correct: 0 },
+            { id: 12, type: 'multiple_choice', topic: 'bài 3 lớp 10', question: 'Unicode là bảng mã?', options: ['A. Quốc tế', 'B. Của Mỹ', 'C. Của Việt Nam', 'D. Của Nga'], correct: 0 },
+            { id: 13, type: 'multiple_choice', topic: 'bài 3 lớp 10', question: 'UTF-8 là định dạng mã hóa?', options: ['A. Có độ dài 1 byte', 'B. Có độ dài cố định', 'C. Có độ dài thay đổi', 'D. Không phải Unicode'], correct: 2 },
+            { id: 14, type: 'multiple_choice', topic: 'bài 3 lớp 10', question: 'Số căn cước công dân nên được lưu dưới dạng?', options: ['A. Số nguyên', 'B. Số thực', 'C. Văn bản', 'D. Lôgic'], correct: 2 },
+            { id: 15, type: 'multiple_choice', topic: 'bài 3 lớp 10', question: 'Kiểu dữ liệu nào dùng để lưu ảnh?', options: ['A. Số', 'B. Văn bản', 'C. Hình ảnh', 'D. Âm thanh'], correct: 2 },
+            // Lớp 10 - Bài 4 (5 câu)
+            { id: 16, type: 'multiple_choice', topic: 'bài 4 lớp 10', question: 'Số 19 trong hệ nhị phân là?', options: ['A. 10011', 'B. 11001', 'C. 10101', 'D. 11100'], correct: 0 },
+            { id: 17, type: 'multiple_choice', topic: 'bài 4 lớp 10', question: 'Kết quả của phép cộng nhị phân 1011 + 1101?', options: ['A. 11000', 'B. 10110', 'C. 11100', 'D. 10010'], correct: 0 },
+            { id: 18, type: 'multiple_choice', topic: 'bài 4 lớp 10', question: 'Số 255 trong hệ nhị phân là?', options: ['A. 11111111', 'B. 1111111', 'C. 100000000', 'D. 11111110'], correct: 0 },
+            { id: 19, type: 'multiple_choice', topic: 'bài 4 lớp 10', question: 'Phép nhân 101 × 11 trong hệ nhị phân bằng?', options: ['A. 1111', 'B. 1011', 'C. 1101', 'D. 1001'], correct: 0 },
+            { id: 20, type: 'multiple_choice', topic: 'bài 4 lớp 10', question: 'Biểu diễn số -19 trong máy tính dùng mã bù 2 là?', options: ['A. 11101101', 'B. 10010011', 'C. 11101100', 'D. 00010011'], correct: 0 },
+            // Lớp 10 - Bài 5 (5 câu)
+            { id: 21, type: 'multiple_choice', topic: 'bài 5 lớp 10', question: 'Phép toán AND cho kết quả 1 khi?', options: ['A. Cả hai đều 1', 'B. Một trong hai là 1', 'C. Hai giá trị khác nhau', 'D. Cả hai đều 0'], correct: 0 },
+            { id: 22, type: 'multiple_choice', topic: 'bài 5 lớp 10', question: 'Phép toán OR cho kết quả 0 khi?', options: ['A. Cả hai đều 0', 'B. Cả hai đều 1', 'C. Một là 1, một là 0', 'D. Không có trường hợp'], correct: 0 },
+            { id: 23, type: 'multiple_choice', topic: 'bài 5 lớp 10', question: 'Phép XOR cho kết quả 1 khi?', options: ['A. Hai giá trị khác nhau', 'B. Hai giá trị giống nhau', 'C. Cả hai đều 1', 'D. Cả hai đều 0'], correct: 0 },
+            { id: 24, type: 'multiple_choice', topic: 'bài 5 lớp 10', question: 'NOT 1 bằng?', options: ['A. 0', 'B. 1', 'C. 2', 'D. Không xác định'], correct: 0 },
+            { id: 25, type: 'multiple_choice', topic: 'bài 5 lớp 10', question: 'Trong Python, giá trị nào được coi là False?', options: ['A. 0', 'B. 1', 'C. "False"', 'D. None'], correct: 0 },
+            // Lớp 10 - Bài 6 (5 câu)
+            { id: 26, type: 'multiple_choice', topic: 'bài 6 lớp 10', question: 'Phương pháp số hóa âm thanh phổ biến là?', options: ['A. PCM', 'B. JPEG', 'C. MP3', 'D. WAV'], correct: 0 },
+            { id: 27, type: 'multiple_choice', topic: 'bài 6 lớp 10', question: 'Độ sâu màu 24 bit cho phép hiển thị bao nhiêu màu?', options: ['A. 16,7 triệu', 'B. 256', 'C. 65536', 'D. 1 tỉ'], correct: 0 },
+            { id: 28, type: 'multiple_choice', topic: 'bài 6 lớp 10', question: 'Hệ màu nào dùng trong máy tính?', options: ['A. RGB', 'B. CMYK', 'C. LAB', 'D. HSB'], correct: 0 },
+            { id: 29, type: 'multiple_choice', topic: 'bài 6 lớp 10', question: 'Định dạng ảnh nào nén không mất dữ liệu?', options: ['A. PNG', 'B. JPEG', 'C. GIF', 'D. BMP'], correct: 0 },
+            { id: 30, type: 'multiple_choice', topic: 'bài 6 lớp 10', question: 'Pixel là gì?', options: ['A. Điểm ảnh', 'B. Màu sắc', 'C. Độ phân giải', 'D. Kích thước ảnh'], correct: 0 },
+            // Lớp 10 - Bài 9 (5 câu)
+            { id: 31, type: 'multiple_choice', topic: 'bài 9 lớp 10', question: 'Nguy cơ nào trên mạng?', options: ['A. Lừa đảo', 'B. Bắt nạt', 'C. Lộ thông tin', 'D. Tất cả'], correct: 3 },
+            { id: 32, type: 'multiple_choice', topic: 'bài 9 lớp 10', question: 'Biện pháp phòng chống lừa đảo?', options: ['A. Không trả lời tin lạ', 'B. Cung cấp thông tin', 'C. Kết bạn với người lạ', 'D. Tin vào mọi thông báo'], correct: 0 },
+            { id: 33, type: 'multiple_choice', topic: 'bài 9 lớp 10', question: 'Phần mềm độc hại nào có khả năng tự nhân bản?', options: ['A. Virus', 'B. Worm', 'C. Trojan', 'D. Spyware'], correct: 1 },
+            { id: 34, type: 'multiple_choice', topic: 'bài 9 lớp 10', question: 'Để bảo vệ máy tính, nên làm gì?', options: ['A. Dùng phần mềm diệt virus', 'B. Không tải phần mềm lạ', 'C. Cập nhật hệ điều hành', 'D. Tất cả'], correct: 3 },
+            { id: 35, type: 'multiple_choice', topic: 'bài 9 lớp 10', question: 'Bắt nạt trên mạng có thể dẫn đến?', options: ['A. Trầm cảm', 'B. Vui vẻ', 'C. Tự tin', 'D. Kết bạn nhiều'], correct: 0 },
+            // Lớp 11 - Bài 1 (5 câu)
+            { id: 36, type: 'multiple_choice', topic: 'bài 1 lớp 11', question: 'Hệ điều hành nào là mã nguồn mở?', options: ['A. Windows', 'B. macOS', 'C. Linux', 'D. iOS'], correct: 2 },
+            { id: 37, type: 'multiple_choice', topic: 'bài 1 lớp 11', question: 'Chức năng nào không phải của hệ điều hành?', options: ['A. Quản lí thiết bị', 'B. Soạn thảo văn bản', 'C. Quản lí tệp', 'D. Giao tiếp người dùng'], correct: 1 },
+            { id: 38, type: 'multiple_choice', topic: 'bài 1 lớp 11', question: 'Hệ điều hành di động phổ biến?', options: ['A. Android', 'B. Windows Phone', 'C. Symbian', 'D. BlackBerry'], correct: 0 },
+            { id: 39, type: 'multiple_choice', topic: 'bài 1 lớp 11', question: 'Plug & play là?', options: ['A. Cắm vào chạy', 'B. Cắm vào cài driver', 'C. Không cần cắm', 'D. Tự động nhận biết'], correct: 0 },
+            { id: 40, type: 'multiple_choice', topic: 'bài 1 lớp 11', question: 'Hệ điều hành có vai trò?', options: ['A. Môi trường trung gian', 'B. Quản lí phần cứng', 'C. Chạy ứng dụng', 'D. Tất cả'], correct: 3 },
+            // Lớp 11 - Bài 3 (5 câu)
+            { id: 41, type: 'multiple_choice', topic: 'bài 3 lớp 11', question: 'Phần mềm nguồn mở là?', options: ['A. Cung cấp mã nguồn', 'B. Miễn phí', 'C. Không sửa đổi được', 'D. Có bản quyền'], correct: 0 },
+            { id: 42, type: 'multiple_choice', topic: 'bài 3 lớp 11', question: 'Giấy phép GNU GPL yêu cầu?', options: ['A. Công bố mã nguồn', 'B. Giữ nguyên giấy phép', 'C. Cả A và B', 'D. Không yêu cầu'], correct: 2 },
+            { id: 43, type: 'multiple_choice', topic: 'bài 3 lớp 11', question: 'Ví dụ phần mềm thương mại?', options: ['A. Linux', 'B. Windows', 'C. GIMP', 'D. OpenOffice'], correct: 1 },
+            { id: 44, type: 'multiple_choice', topic: 'bài 3 lớp 11', question: 'Phần mềm trực tuyến là?', options: ['A. Google Docs', 'B. Word', 'C. Excel', 'D. Photoshop'], correct: 0 },
+            { id: 45, type: 'multiple_choice', topic: 'bài 3 lớp 11', question: 'Ưu điểm của phần mềm nguồn mở?', options: ['A. Chi phí thấp', 'B. Minh bạch', 'C. Không phụ thuộc nhà cung cấp', 'D. Tất cả'], correct: 3 },
+            // Lớp 11 - Bài 5 (5 câu)
+            { id: 46, type: 'multiple_choice', topic: 'bài 5 lớp 11', question: 'Thiết bị vào là?', options: ['A. Bàn phím', 'B. Màn hình', 'C. Máy in', 'D. Loa'], correct: 0 },
+            { id: 47, type: 'multiple_choice', topic: 'bài 5 lớp 11', question: 'Cổng nào truyền cả âm thanh và hình ảnh?', options: ['A. VGA', 'B. HDMI', 'C. USB', 'D. COM'], correct: 1 },
+            { id: 48, type: 'multiple_choice', topic: 'bài 5 lớp 11', question: 'Độ phân giải chuột đo bằng?', options: ['A. dpi', 'B. Hz', 'C. GB', 'D. MB'], correct: 0 },
+            { id: 49, type: 'multiple_choice', topic: 'bài 5 lớp 11', question: 'Kết nối bluetooth cần?', options: ['A. Ghép đôi', 'B. Cài driver', 'C. Cắm dây', 'D. Không cần'], correct: 0 },
+            { id: 50, type: 'multiple_choice', topic: 'bài 5 lớp 11', question: 'Máy in laser thường dùng?', options: ['A. In tài liệu', 'B. In ảnh màu', 'C. In hóa đơn', 'D. In banner'], correct: 0 }
+        ];
+
+        // ==================== HÀM TÌM KIẾM THÔNG MINH ====================
+        function searchTextbookDetails(question) {
+            const lowerQ = question.toLowerCase();
+            
+            // Ưu tiên tìm chính xác tên bài và lớp
+            const match = lowerQ.match(/(?:bài\s*)(\d+)(?:\s*lớp\s*)(\d+)/i) || lowerQ.match(/(?:lớp\s*)(\d+)(?:\s*bài\s*)(\d+)/i);
+            if (match) {
+                const lessonKey = `bài ${match[1]} lớp ${match[2]}`;
+                const details = textbookDetails[lessonKey];
+                if (details) {
+                    // Nếu có chỉ định mục (ví dụ "mục 1", "phần 2")
+                    const sectionMatch = lowerQ.match(/(?:mục|phần)\s*(\d+)/i);
+                    if (sectionMatch) {
+                        const sectionNum = parseInt(sectionMatch[1]);
+                        const section = details.sections.find(s => {
+                            const num = parseInt(s.title.split('.')[0]);
+                            return num === sectionNum;
+                        });
+                        if (section) return { lesson: details.title, section, type: 'section' };
+                    }
+                    // Nếu có chỉ định tiểu mục (ví dụ "a)", "b)")
+                    const subMatch = lowerQ.match(/([a-z]\))/i);
+                    if (subMatch) {
+                        const subKey = subMatch[1];
+                        for (let sec of details.sections) {
+                            const sub = sec.subsections?.find(s => s.title.toLowerCase().includes(subKey));
+                            if (sub) return { lesson: details.title, section: sec, subsection: sub, type: 'subsection' };
+                        }
+                    }
+                    // Nếu không, trả về toàn bài
+                    return { lesson: details.title, sections: details.sections, type: 'full' };
+                }
+            }
+            
+            // Nếu không tìm thấy theo bài, thử tìm theo từ khóa trong tất cả các bài
+            const stopwords = ['của','các','và','cho','về','với','những','được','một','có','trong','trên','dưới','khi','như','nào','lớp','bài','học','tin','học','máy','tính','phần','mềm','thông','tin','dữ','liệu','hệ','điều','hành','ngôn','ngữ','lập','trình','cơ','bản','nâng','cao','số','kiểu','mới','là','gì','thế','nào','cách','sử','dụng','hướng','dẫn'];
+            const words = lowerQ.split(/\s+/).filter(w => w.length > 2 && !stopwords.includes(w));
+            if (words.length === 0) return null;
+            
+            let bestMatch = null;
+            let bestScore = 0;
+            
+            for (let [key, lesson] of Object.entries(textbookDetails)) {
+                for (let sec of lesson.sections) {
+                    for (let sub of (sec.subsections || [])) {
+                        const content = (sub.title + ' ' + sub.content).toLowerCase();
+                        let score = words.filter(w => content.includes(w)).length;
+                        const titleLower = sub.title.toLowerCase();
+                        words.forEach(w => { if (titleLower.includes(w)) score += 2; });
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestMatch = { lesson: lesson.title, section: sec, subsection: sub, type: 'subsection' };
+                        }
+                    }
+                    if (!sec.subsections) {
+                        const content = (sec.title + ' ' + (sec.content || '')).toLowerCase();
+                        let score = words.filter(w => content.includes(w)).length;
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestMatch = { lesson: lesson.title, section: sec, type: 'section' };
+                        }
+                    }
+                }
+            }
+            
+            if (bestMatch && bestScore > 0) return bestMatch;
+            return null;
+        }
+
+        function formatTextbookResponse(detail) {
+            let html = `<div class="font-bold text-lg text-purple-700 mb-2">📖 ${detail.lesson}</div>`;
+            if (detail.type === 'section') {
+                html += `<div class="font-semibold text-md">${detail.section.title}</div>`;
+                if (detail.section.subsections) {
+                    detail.section.subsections.forEach(sub => {
+                        html += `<div class="ml-4 mt-2"><span class="font-medium">${sub.title}</span> (trang ${sub.page}): ${sub.content}</div>`;
+                    });
+                } else {
+                    html += `<div>${detail.section.content || ''}</div>`;
+                }
+            } else if (detail.type === 'subsection') {
+                html += `<div class="font-semibold">${detail.section.title}</div>`;
+                html += `<div class="ml-4 mt-2"><span class="font-medium">${detail.subsection.title}</span> (trang ${detail.subsection.page}): ${detail.subsection.content}</div>`;
+            } else {
+                detail.sections.forEach(sec => {
+                    html += `<div class="mt-3"><span class="font-semibold">${sec.title}</span>`;
+                    if (sec.subsections) {
+                        sec.subsections.forEach(sub => {
+                            html += `<div class="ml-4 mt-1"><span class="font-medium">${sub.title}</span> (trang ${sub.page}): ${sub.content}</div>`;
+                        });
+                    }
+                    html += `</div>`;
+                });
+            }
+            return html;
+        }
+
+        function generateDoraverseResponse(question) {
+            doraverseInteractions++;
+            document.getElementById('doraverseCount').textContent = doraverseInteractions;
+            const lower = question.toLowerCase();
+            if (learningMode === 'code_review') {
+                return "**🧠 Chế độ Review Code**\n\nHãy cung cấp code của bạn, tôi sẽ phân tích và đưa ra nhận xét.";
+            }
+            if (learningMode === 'debugging') {
+                return "**🐞 Chế độ Debug**\n\nMô tả lỗi bạn gặp phải, tôi sẽ giúp bạn tìm cách sửa.";
+            }
+            if (learningMode === 'project') {
+                return "**🚀 Chế độ Dự án**\n\nBạn muốn bắt đầu dự án nào? Tôi có thể hướng dẫn từng bước.";
+            }
+            return "**🧠 Doraverse AI**\n\nCảm ơn bạn đã hỏi! Hiện tôi chưa tìm thấy thông tin trong sách giáo khoa cho câu hỏi này. Bạn có thể tham khảo thêm trong Thư viện kiến thức hoặc đặt câu hỏi khác nhé!";
+        }
+
+        // ==================== HÀM CHAT ====================
+        function addMessageToChat(sender, msg, isDoraverse = true, isHtml = false) {
+            const chat = document.getElementById('aiChat');
+            const id = 'msg_' + Date.now();
+            let html = '';
+            if (sender === 'user') {
+                html = `<div class="flex justify-end mb-4" id="${id}"><div class="bg-purple-600 text-white p-4 rounded-lg user-bubble"><p>${escapeHtml(msg)}</p><div class="text-xs text-purple-200 mt-2 text-right">${new Date().toLocaleTimeString()}</div></div></div>`;
+            } else {
+                html = `<div class="doraverse-message mb-6" id="${id}"><div class="doraverse-avatar doraverse-pulse"><i class="fas fa-robot"></i></div><div class="doraverse-bubble p-4 rounded-lg"><div class="flex items-center mb-3"><div class="bg-purple-100 p-2 rounded-full mr-2"><i class="fas fa-robot text-purple-600"></i></div><div><span class="font-bold text-gray-800">Doraverse AI</span><span class="text-xs text-purple-600 ml-2">v4.0</span></div></div><div class="prose max-w-none">${isHtml ? msg : formatMessage(msg)}</div><div class="ai-response-actions"><button onclick="copyMessage('${id}')" class="action-btn copy-btn"><i class="fas fa-copy mr-1"></i> Copy</button><button onclick="rateResponse('${id}','good')" class="action-btn feedback-btn"><i class="fas fa-thumbs-up mr-1"></i> Hữu ích</button><button onclick="rateResponse('${id}','bad')" class="action-btn feedback-btn"><i class="fas fa-thumbs-down mr-1"></i> Cần cải thiện</button></div><div class="text-xs text-gray-500 mt-2">${new Date().toLocaleTimeString()}</div></div></div>`;
+            }
+            const init = chat.querySelector('.text-center');
+            if (init && chatHistory.length === 0) init.remove();
+            chat.innerHTML += html;
+            chat.scrollTop = chat.scrollHeight;
+            chatHistory.push({ id, sender, msg, timestamp: new Date().toISOString() });
+        }
+
+        function showTypingIndicator() {
+            const chat = document.getElementById('aiChat');
+            const id = 'typing_' + Date.now();
+            chat.innerHTML += `<div class="flex mb-4" id="${id}"><div class="doraverse-bubble p-4 rounded-lg"><div class="ai-typing-indicator doraverse-typing"><span></span><span></span><span></span></div><p class="text-sm text-gray-500 mt-2">Doraverse AI đang suy nghĩ...</p></div></div>`;
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typing = document.querySelector('.ai-typing-indicator')?.closest('.flex');
+            if (typing) typing.remove();
+        }
+
+        function askAI() {
+            const q = document.getElementById('questionInput').value.trim();
+            if (!q) { showNotification("Vui lòng nhập câu hỏi!", "warning"); return; }
+            addMessageToChat('user', q);
+            document.getElementById('questionInput').value = '';
+            document.getElementById('charCount').textContent = '0';
+            showTypingIndicator();
+
+            setTimeout(() => {
+                removeTypingIndicator();
+                
+                const detail = searchTextbookDetails(q);
+                let response = '';
+                let isHtml = false;
+                if (detail) {
+                    response = formatTextbookResponse(detail) + '<br><span class="text-xs text-gray-500">📌 Nguồn: Sách giáo khoa Tin học 10/11 - Kết nối tri thức</span>';
+                    isHtml = true;
+                } else {
+                    response = generateDoraverseResponse(q);
+                }
+                
+                addMessageToChat('ai', response, true, isHtml);
+                
+                if (isLoggedIn && currentUser) {
+                    currentUser.stats.questionsAsked = (currentUser.stats.questionsAsked || 0) + 1;
+                    currentUser.xp += detail ? 5 : 2;
+                    updateDisplayedStats();
+                    addRecentActivity('Tra cứu: ' + q.substring(0, 50) + '...');
+                }
+            }, 800);
+        }
+
+        // ==================== HÀM TẠO BÀI TẬP (ngẫu nhiên) ====================
+        function generateExercise() {
+            const topic = document.getElementById('subjectSelect').value;
+            const count = parseInt(document.getElementById('questionCount').value) || 5;
+
+            let questions = [];
+            if (topic === 'all') {
+                // Lấy ngẫu nhiên count câu từ toàn bộ ngân hàng
+                questions = sampleQuestions.sort(() => 0.5 - Math.random()).slice(0, count);
+            } else {
+                const filtered = sampleQuestions.filter(q => q.topic === topic);
+                if (filtered.length === 0) {
+                    showNotification('Không có câu hỏi cho chủ đề này!', 'warning');
+                    return;
+                }
+                // Lấy ngẫu nhiên count câu từ chủ đề đó
+                questions = filtered.sort(() => 0.5 - Math.random()).slice(0, Math.min(count, filtered.length));
+            }
+
+            currentExercise = { questions, createdAt: new Date().toISOString() };
+            renderExercise(questions);
+            showNotification('✅ Đã tạo bài tập trắc nghiệm!', 'success');
+        }
+
+        function renderExercise(questions) {
+            const output = document.getElementById('exerciseOutput');
+            let html = '<div class="space-y-4">';
+            questions.forEach((q, idx) => {
+                html += `<div class="exercise-question border p-3 rounded-lg" data-id="${q.id}">`;
+                html += `<p class="font-bold">Câu ${idx+1}: ${q.question}</p>`;
+                if (q.options) {
+                    q.options.forEach((opt, optIdx) => {
+                        html += `<div class="ml-4"><input type="radio" name="q${idx}" value="${optIdx}" class="mr-2">${opt}</div>`;
+                    });
+                }
+                html += `</div>`;
+            });
+            html += '</div>';
+            output.innerHTML = html;
+        }
+
+        function checkExercise() {
+            if (!currentExercise) {
+                showNotification('Chưa có bài tập nào để kiểm tra!', 'warning');
+                return;
+            }
+            let correctCount = 0;
+            const questions = currentExercise.questions;
+            for (let i = 0; i < questions.length; i++) {
+                const q = questions[i];
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if (selected && parseInt(selected.value) === q.correct) {
+                    correctCount++;
+                }
+            }
+            showNotification(`✅ Bạn trả lời đúng ${correctCount}/${questions.length} câu!`, 'success');
+            if (isLoggedIn && currentUser) {
+                currentUser.stats.exercisesCompleted = (currentUser.stats.exercisesCompleted || 0) + 1;
+                currentUser.xp += correctCount * 2;
+                updateDisplayedStats();
+                addRecentActivity(`Làm bài tập: đúng ${correctCount}/${questions.length}`);
+            }
+        }
+
+        function saveExercise() {
+            if (!currentExercise) {
+                showNotification('Chưa có bài tập nào để lưu!', 'warning');
+                return;
+            }
+            const saved = JSON.parse(localStorage.getItem('savedExercises') || '[]');
+            saved.push(currentExercise);
+            localStorage.setItem('savedExercises', JSON.stringify(saved));
+            updateSavedExercisesList();
+            showNotification('💾 Đã lưu bài tập!', 'success');
+        }
+
+        function updateSavedExercisesList() {
+            const list = document.getElementById('savedExercisesList');
+            const saved = JSON.parse(localStorage.getItem('savedExercises') || '[]');
+            if (saved.length === 0) {
+                list.innerHTML = '<p class="text-gray-500">Chưa có bài tập nào được lưu.</p>';
+                return;
+            }
+            let html = '';
+            saved.forEach((ex, index) => {
+                html += `<div class="flex justify-between items-center p-2 border-b"><span>Bài tập ${index+1} (${ex.questions.length} câu)</span><button onclick="loadSavedExercise(${index})" class="text-blue-600 hover:underline">Tải</button></div>`;
+            });
+            list.innerHTML = html;
+        }
+
+        function loadSavedExercise(index) {
+            const saved = JSON.parse(localStorage.getItem('savedExercises') || '[]');
+            if (saved[index]) {
+                currentExercise = saved[index];
+                renderExercise(currentExercise.questions);
+                showNotification('📂 Đã tải bài tập!', 'info');
+            }
+        }
+
+        function shareExercise() {
+            if (!currentExercise) {
+                showNotification('Không có bài tập để chia sẻ!', 'warning');
+                return;
+            }
+            const data = JSON.stringify(currentExercise);
+            navigator.clipboard.writeText(data).then(() => {
+                showNotification('🔗 Đã copy bài tập vào clipboard!', 'success');
+            });
+        }
+
+        // ==================== CÁC HÀM HỖ TRỢ ====================
+        function showNotification(m, t='info') {
+            const c = document.getElementById('notificationContainer');
+            if (!c) return;
+            const id = 'n_' + Date.now();
+            const bg = {success:'bg-green-500',error:'bg-red-500',warning:'bg-yellow-500',info:'bg-blue-500'}[t];
+            const icon = {success:'fa-check-circle',error:'fa-exclamation-circle',warning:'fa-exclamation-triangle',info:'fa-info-circle'}[t];
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = bg + ' text-white p-4 rounded-lg shadow-lg mb-2 notification';
+            div.innerHTML = `<div class="flex justify-between"><div class="flex items-center"><i class="fas ${icon} mr-3"></i><p>${m}</p></div><button onclick="document.getElementById('${id}').remove()" class="ml-4"><i class="fas fa-times"></i></button></div>`;
+            c.appendChild(div);
+            setTimeout(() => { if (document.getElementById(id)) document.getElementById(id).remove(); }, 5000);
+        }
+
+        function escapeHtml(t) { let d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+        function formatMessage(m) { return m.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\`\`\`([\s\S]*?)\`\`\`/g, '<pre class="bg-gray-800 text-white p-3 rounded my-2"><code>$1</code></pre>').replace(/\`(.*?)\`/g, '<code class="bg-gray-200 px-1 rounded">$1</code>').replace(/\n/g, '<br>'); }
+        function copyMessage(id) { 
+            const msgDiv = document.getElementById(id).querySelector('.prose');
+            if (msgDiv) {
+                const text = msgDiv.innerText;
+                navigator.clipboard.writeText(text).then(() => showNotification('Đã copy!','success'));
+            }
+        }
+        function rateResponse(id, r) { showNotification(r==='good'?'👍 Cảm ơn!':'👌 OK','info'); }
+
+        // ==================== XỬ LÝ ĐĂNG NHẬP ====================
+        function openAuthModal() { 
+            if (!isLoggedIn) {
+                currentUser = JSON.parse(JSON.stringify(CONFIG.DEFAULT_USER));
+                currentUser.fullname = 'Học sinh';
+                isLoggedIn = true;
+                updateUserUI();
+                showNotification('🎉 Đăng nhập thành công!', 'success');
+            }
+        }
+        function closeAuthModal() {}
+        function toggleUserMenu() { document.getElementById('userMenu').classList.toggle('hidden'); }
+        function handleLogout() { currentUser = null; isLoggedIn = false; updateUserUI(); showNotification('👋 Đã đăng xuất!', 'info'); document.getElementById('userMenu').classList.add('hidden'); }
+        function updateUserUI() {
+            const authBtn = document.getElementById('authBtn');
+            const userMenuBtn = document.getElementById('userMenuBtn');
+            const userStatus = document.getElementById('userStatus');
+            const userDashboard = document.getElementById('userDashboard');
+            if (isLoggedIn && currentUser) {
+                authBtn.classList.add('hidden');
+                userMenuBtn.classList.remove('hidden');
+                userStatus.classList.remove('hidden');
+                userDashboard.classList.remove('hidden');
+                document.getElementById('currentUserName').textContent = currentUser.fullname;
+                document.getElementById('currentUserXP').textContent = currentUser.xp;
+                document.getElementById('menuUserName').textContent = currentUser.fullname;
+                document.getElementById('menuUserEmail').textContent = 'Đã đăng nhập';
+                updateDisplayedStats();
+            } else {
+                authBtn.classList.remove('hidden');
+                userMenuBtn.classList.add('hidden');
+                userStatus.classList.add('hidden');
+                userDashboard.classList.add('hidden');
+                currentUser = JSON.parse(JSON.stringify(CONFIG.DEFAULT_USER));
+                updateDisplayedStats();
+            }
+        }
+        function updateDisplayedStats() {
+            if (isLoggedIn && currentUser) {
+                document.getElementById('exercisesCount').textContent = currentUser.stats?.exercisesCompleted || 0;
+                document.getElementById('questionsCount').textContent = currentUser.stats?.questionsAsked || 0;
+                document.getElementById('doraverseCount').textContent = doraverseInteractions;
+                document.getElementById('xpPoints').textContent = currentUser.xp || 0;
+            } else {
+                document.getElementById('exercisesCount').textContent = 0;
+                document.getElementById('questionsCount').textContent = 0;
+                document.getElementById('doraverseCount').textContent = doraverseInteractions;
+                document.getElementById('xpPoints').textContent = 0;
+            }
+        }
+        function addRecentActivity(text) {
+            if (!isLoggedIn || !currentUser) return;
+            if (!currentUser.recentActivity) currentUser.recentActivity = [];
+            currentUser.recentActivity.push({ text, timestamp: new Date().toISOString() });
+            if (currentUser.recentActivity.length > 20) currentUser.recentActivity = currentUser.recentActivity.slice(-20);
+            updateRecentActivity();
+        }
+        function updateRecentActivity() {
+            if (!isLoggedIn || !currentUser) return;
+            const container = document.getElementById('recentActivity');
+            container.innerHTML = '';
+            const activities = (currentUser.recentActivity || []).slice(-5).reverse();
+            if (activities.length === 0) { container.innerHTML = '<div class="text-gray-500 text-center py-4"><p>Chưa có hoạt động nào</p></div>'; return; }
+            activities.forEach(act => {
+                container.innerHTML += `<div class="flex items-center p-2 border-b"><div class="bg-purple-100 p-2 rounded-full mr-3"><i class="fas fa-history text-purple-600"></i></div><div class="flex-1"><p class="text-sm">${act.text}</p><p class="text-xs text-gray-500">${new Date(act.timestamp).toLocaleString()}</p></div></div>`;
+            });
+        }
+        function showUserDashboard() { document.getElementById('userDashboard').scrollIntoView({behavior:'smooth'}); document.getElementById('userMenu').classList.add('hidden'); }
+        function showUserProgress() { showNotification('Đã cập nhật tiến độ!','info'); }
+        function showSavedWork() { showNotification('Tính năng đang phát triển!','info'); }
+        function showKnowledgeBase() { document.getElementById('knowledgeBase').classList.remove('hidden'); document.getElementById('knowledgeBase').scrollIntoView({behavior:'smooth'}); document.getElementById('userMenu').classList.add('hidden'); }
+        function showDoraverseProjects() { document.getElementById('doraverseProjects').classList.remove('hidden'); document.getElementById('doraverseProjects').scrollIntoView({behavior:'smooth'}); document.getElementById('userMenu').classList.add('hidden'); }
+        function clearChat() {
+            document.getElementById('aiChat').innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-robot text-4xl mb-4 text-purple-500"></i><p class="text-lg">Xin chào! Tôi là Doraverse AI v4.0</p><p class="text-sm mt-2">Tôi có thể trả lời chi tiết từ sách giáo khoa Tin 10 và 11</p><div class="mt-4"><button onclick="quickQuestion(\'nguyên tắc phòng chống lừa đảo\')" class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full m-1">🛡️ Nguyên tắc phòng chống lừa đảo</button><button onclick="quickQuestion(\'thiết bị vào ra thông dụng\')" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full m-1">🖥️ Thiết bị vào ra</button><button onclick="quickQuestion(\'bài 10 lớp 10\')" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full m-1">📘 Bài 10 lớp 10</button><button onclick="quickQuestion(\'bài 3 lớp 11 phần mềm nguồn mở\')" class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full m-1">📗 Bài 3 lớp 11</button></div></div>';
+            chatHistory = []; showNotification('Đã xóa chat!','info');
+        }
+        function quickQuestion(q) { document.getElementById('questionInput').value = q; document.getElementById('charCount').textContent = q.length; askAI(); }
+
+        // ==================== HÀM SET LEARNING MODE (ĐÃ SỬA LỖI) ====================
+        function setLearningMode(mode) {
+            learningMode = mode;
+            document.querySelectorAll('.learning-mode-card').forEach(c => c.classList.remove('active'));
+            let id = '';
+            if (mode === 'tutorial') id = 'modeTutorial';
+            else if (mode === 'code_review') id = 'modeCodeReview';
+            else if (mode === 'debugging') id = 'modeDebugging';
+            else if (mode === 'project') id = 'modeProject';
+            if (id) {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('active');
+            }
+        }
+
+        // ==================== CODE EDITOR NÂNG CẤP ====================
+        function initializeCodeEditor() {
+            codeEditor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+                mode: "htmlmixed",
+                theme: "monokai",
+                lineNumbers: true,
+                lineWrapping: true,
+                autoCloseTags: true,
+                autoCloseBrackets: true,
+                matchTags: true,
+                matchBrackets: true,
+                indentUnit: 4,
+                tabSize: 4,
+                smartIndent: true,
+                electricChars: true,
+                extraKeys: {
+                    "Ctrl-Space": "autocomplete",
+                    "Ctrl-S": function() { saveCurrentCode(); },
+                    "Ctrl-R": function() { runCode(); },
+                    "Ctrl-/": "toggleComment",
+                    "Ctrl-D": "deleteLine",
+                    "Ctrl-Z": "undo",
+                    "Ctrl-Y": "redo",
+                    "Ctrl-F": "find",
+                    "Ctrl-H": "replace"
+                },
+                gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+                foldGutter: true
+            });
+            setLanguage('html');
+        }
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.textContent.trim() === lang.toUpperCase()) btn.classList.add('active');
+            });
+            let mode, content;
+            switch(lang) {
+                case 'html':
+                    mode = 'htmlmixed';
+                    content = '<!DOCTYPE html>\n<html lang="vi">\n<head>\n    <meta charset="UTF-8">\n    <title>Trang web của tôi</title>\n    <style>\n        body { font-family: Arial, sans-serif; }\n    </style>\n</head>\n<body>\n    <h1>Xin chào!</h1>\n    <p>Đây là trang web đầu tiên của tôi.</p>\n    <script>\n        console.log("Hello world!");\n    <\/script>\n</body>\n</html>';
+                    break;
+                case 'css':
+                    mode = 'css';
+                    content = 'body {\n    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n    min-height: 100vh;\n    display: flex;\n    justify-content: center;\n    align-items: center;\n}\n.card {\n    background: white;\n    padding: 30px;\n    border-radius: 10px;\n    box-shadow: 0 10px 30px rgba(0,0,0,0.3);\n}';
+                    break;
+                case 'js':
+                    mode = 'javascript';
+                    content = '// Hàm tính tổng\nfunction sum(a, b) {\n    return a + b;\n}\n\nconsole.log("Tổng của 5 và 3 là:", sum(5, 3));\n\n// Vòng lặp\nfor (let i = 0; i < 5; i++) {\n    console.log("i =", i);\n}';
+                    break;
+                case 'python':
+                    mode = 'python';
+                    content = '# Chương trình Python\nprint("Xin chào Python!")\n\n# Tính tổng từ 1 đến 10\ntong = 0\nfor i in range(1, 11):\n    tong += i\nprint("Tổng từ 1 đến 10 là:", tong)\n\n# Hàm kiểm tra số nguyên tố\ndef is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5)+1):\n        if n % i == 0:\n            return False\n    return True\n\nprint("Các số nguyên tố nhỏ hơn 20:", [x for x in range(20) if is_prime(x)])';
+                    break;
+                case 'sql':
+                    mode = 'sql';
+                    content = '-- Tạo bảng\nCREATE TABLE users (\n    id INT PRIMARY KEY,\n    name VARCHAR(100),\n    email VARCHAR(100) UNIQUE,\n    created_at DATE\n);\n\n-- Thêm dữ liệu\nINSERT INTO users (id, name, email, created_at) VALUES\n(1, \'Nguyễn Văn A\', \'a@example.com\', \'2024-01-01\'),\n(2, \'Trần Thị B\', \'b@example.com\', \'2024-01-02\');\n\n-- Truy vấn\nSELECT * FROM users WHERE created_at > \'2024-01-01\';';
+                    break;
+                default: mode = 'htmlmixed'; content = '';
+            }
+            codeEditor.setOption("mode", mode);
+            codeEditor.setValue(content);
+        }
+
+        function formatCode() {
+            // Định dạng code đơn giản (chỉ cho JavaScript, CSS, HTML)
+            let code = codeEditor.getValue();
+            // Thử dùng js-beautify nếu có, nhưng ở đây tạm thời chỉ thông báo
+            showNotification('Tính năng format đang phát triển!', 'info');
+        }
+
+        function undo() { codeEditor.undo(); }
+        function redo() { codeEditor.redo(); }
+
+        async function runCode() {
+            const start = performance.now();
+            const code = codeEditor.getValue();
+            const out = document.getElementById('codeOutput');
+            try {
+                if (currentLanguage === 'html' || currentLanguage === 'css' || currentLanguage === 'js') {
+                    if (currentLanguage === 'html') {
+                        out.srcdoc = code;
+                    } else if (currentLanguage === 'css') {
+                        out.srcdoc = `<html><head><style>${code}</style></head><body><div class="card"><h1>CSS Demo</h1><p>Áp dụng CSS của bạn</p></div></body></html>`;
+                    } else if (currentLanguage === 'js') {
+                        out.srcdoc = `<html><body><script>${code}<\/script><p>Kiểm tra console (F12) để xem kết quả JavaScript.</p></body></html>`;
+                    }
+                } else if (currentLanguage === 'python') {
+                    await initPyodide();
+                    try {
+                        pyodide.runPython(`
+import sys
+from io import StringIO
+sys.stdout = StringIO()
+                        `);
+                        pyodide.runPython(code);
+                        let output = pyodide.runPython('sys.stdout.getvalue()');
+                        out.srcdoc = `<pre style="background:#1e1e1e; color:#d4d4d4; padding:10px;">${escapeHtml(output)}</pre>`;
+                    } catch (e) {
+                        out.srcdoc = `<pre style="background:#1e1e1e; color:#f48771; padding:10px;">${escapeHtml(e.message)}</pre>`;
+                    }
+                } else if (currentLanguage === 'sql') {
+                    await initSQL();
+                    const db = new SQL.Database();
+                    try {
+                        const results = db.exec(code);
+                        let html = '<div style="background:#1e1e1e; color:#d4d4d4; padding:10px;">';
+                        if (results.length === 0) {
+                            html += '<p style="color: #10b981;">✅ Câu lệnh thực thi thành công.</p>';
+                        } else {
+                            for (let result of results) {
+                                html += '<table border="1" style="border-collapse:collapse;margin:5px;color:black;background:white;">';
+                                html += '<tr>' + result.columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
+                                for (let row of result.values) {
+                                    html += '<tr>' + row.map(v => `<td>${v}</td>`).join('') + '</tr>';
+                                }
+                                html += '</table>';
+                            }
+                        }
+                        html += '</div>';
+                        out.srcdoc = html;
+                    } catch (e) {
+                        out.srcdoc = `<pre style="background:#1e1e1e; color:#f48771; padding:10px;">${escapeHtml(e.message)}</pre>`;
+                    }
+                }
+                const end = performance.now();
+                document.getElementById('outputStats').classList.remove('hidden');
+                document.getElementById('executionTime').textContent = Math.round(end - start);
+                document.getElementById('memoryUsage').textContent = Math.round(code.length / 1024 * 10) / 10;
+                showNotification(`✅ Đã chạy ${currentLanguage.toUpperCase()} code!`, 'success');
+                if (isLoggedIn && currentUser) { 
+                    currentUser.stats.codeRuns = (currentUser.stats.codeRuns || 0) + 1; 
+                    currentUser.xp += 2; 
+                    updateDisplayedStats(); 
+                    addRecentActivity('Chạy code ' + currentLanguage); 
+                }
+            } catch(e) { 
+                showNotification(`❌ Lỗi: ${e.message}`, 'error'); 
+            }
+        }
+
+        function askAIAboutCode() {
+            const code = codeEditor.getValue();
+            const q = `Hãy phân tích code sau:\n\`\`\`${currentLanguage}\n${code}\n\`\`\`\n\nYêu cầu: giải thích, đánh giá, đề xuất cải tiến.`;
+            document.getElementById('questionInput').value = q;
+            document.getElementById('charCount').textContent = q.length;
+            askAI();
+        }
+
+        function saveCurrentCode() { 
+            if (!isLoggedIn) { showNotification('Vui lòng đăng nhập!', 'warning'); openAuthModal(); return; }
+            localStorage.setItem('savedCode_' + currentLanguage, codeEditor.getValue());
+            showNotification('💾 Đã lưu code!', 'success'); 
+        }
+        function loadExample() { setLanguage(currentLanguage); }
+        function setQuestionType(type) { questionType = type; }
+        function setDifficulty(difficulty) { currentDifficulty = difficulty; }
+        function scrollToSection(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
+        function showAndScroll(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
+        function toggleDarkMode() { isDarkMode = !isDarkMode; document.body.classList.toggle('dark-mode', isDarkMode); }
+        function startProject(type) { 
+            let code='', lang='';
+            if (type==='ai_chatbot') { lang='python'; code=`# AI Chatbot mẫu\nprint("Xin chào! Tôi là chatbot.")\nname = input("Bạn tên là gì? ")\nprint(f"Rất vui được gặp bạn, {name}!")`; }
+            else if (type==='js_game') { lang='javascript'; code=`// Game đoán số\nconst secret = Math.floor(Math.random() * 100) + 1;\nlet guess;\nwhile (guess != secret) {\n    guess = parseInt(prompt("Đoán số từ 1-100:"));\n    if (guess > secret) alert("Quá lớn!");\n    else if (guess < secret) alert("Quá nhỏ!");\n}\nalert("Chúc mừng! Bạn đã đoán đúng!");`; }
+            else { lang='javascript'; code=`// Data viz với Chart.js (cần include thư viện)\n// Xem hướng dẫn tại https://www.chartjs.org/`; }
+            codeEditor.setValue(code);
+            setLanguage(lang);
+            showNotification('🚀 Đã tải dự án!', 'success');
+        }
+        function convertCode() { showNotification('🔧 Chức năng đang phát triển', 'info'); }
+        function analyzeCodeWithDoraverse() { askAIAboutCode(); }
+        function doraverseCodeOptimize() { showNotification('✨ Đã tối ưu code!', 'success'); }
+        function uploadFileForAI() { showNotification('📁 Upload file đang phát triển', 'info'); }
+        function voiceInput() { showNotification('🎤 Nhận diện giọng nói đang phát triển', 'info'); }
+        function clearOutput() { document.getElementById('codeOutput').srcdoc=''; document.getElementById('outputStats').classList.add('hidden'); }
+
+        // ==================== KHỞI TẠO ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCodeEditor();
+            document.getElementById('questionInput').addEventListener('input', function() { document.getElementById('charCount').textContent = this.value.length; });
+            document.getElementById('questionInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    askAI();
+                }
+            });
+            setQuestionType('basic');
+            setDifficulty('medium');
+            setLearningMode('tutorial'); // Gọi hàm đã sửa
+            updateSavedExercisesList();
+            // Auto login for demo
+            openAuthModal();
+        });
+        window.addEventListener('scroll', function() {
+            let win = document.body.scrollTop || document.documentElement.scrollTop;
+            let h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            document.getElementById('pageProgress').style.width = (win/h)*100 + '%';
+        });
+
+        // Pyodide init
+        async function initPyodide() {
+            if (!pyodide) {
+                pyodide = await loadPyodide();
+                console.log('Pyodide ready');
+            }
+            return pyodide;
+        }
+        async function initSQL() {
+            if (!SQL) {
+                SQL = await initSqlJs({ locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}` });
+                console.log('SQL.js ready');
+            }
+            return SQL;
+        }
+    </script>
+</body>
+</html>
